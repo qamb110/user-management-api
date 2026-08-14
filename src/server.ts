@@ -9,6 +9,7 @@ dotenv.config();
 import app from './app';
 import { connectDB } from './config/database';
 import { logger } from './utils/logger';
+import { initWebSocketServer } from './websocket/socket';
 
 // Use the PORT from .env, otherwise default to 3000
 const PORT = process.env.PORT || 3000;
@@ -20,9 +21,13 @@ const startServer = async (): Promise<void> => {
   try {
     await connectDB();
 
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       logger.info(`Server is running on http://localhost:${PORT}`);
     });
+
+    // Attach the WebSocket server to the same underlying HTTP server, so
+    // WS clients connect to the same host/port as the REST API.
+    initWebSocketServer(server);
   } catch (error) {
     logger.error('Failed to start server', { error });
     // Exit with a non-zero code so process managers/CI know startup failed.

@@ -2,6 +2,7 @@ import * as userRepository from '../repositories/user.repository';
 import { IUser } from '../models/user.model';
 import { hashPassword } from '../utils/password';
 import { logger } from '../utils/logger';
+import { broadcastNewUser } from '../websocket/socket';
 
 // The Service Layer holds business rules (password hashing, deciding what
 // counts as "not found", etc). Field-level validation (required fields,
@@ -49,7 +50,13 @@ export const createUser = async (payload: CreateUserPayload) => {
 
   logger.info('User created', { userId: user._id.toString(), username, role: user.role });
 
-  return toSafeUser(user);
+  const safeUser = toSafeUser(user);
+
+  // Lets any connected admin see the new user show up live, without
+  // needing to refresh/re-poll GET /users.
+  broadcastNewUser(safeUser);
+
+  return safeUser;
 };
 
 export const getAllUsers = async () => {
