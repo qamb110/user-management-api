@@ -8,6 +8,7 @@ export interface IUser extends Document {
   role: 'user' | 'admin';
   password: string;
   isDeleted: boolean;
+  profilePicture?: string;
 }
 
 // A Mongoose "Schema" defines the fields a document in the collection will
@@ -46,6 +47,12 @@ const userSchema = new Schema<IUser>(
       // We "soft delete" users: instead of removing the document from
       // MongoDB, we just flag it. This keeps the data (useful for audit /
       // history) while letting the API hide it from normal reads.
+    },
+    profilePicture: {
+      type: String,
+      // Not required — a user may not have uploaded a picture yet. This
+      // stores a URL (e.g. "/uploads/<file>") pointing at the image saved
+      // by POST /upload, not the image data itself.
     },
   },
   {

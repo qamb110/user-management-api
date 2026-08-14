@@ -2,6 +2,7 @@ import * as userRepository from '../repositories/user.repository';
 import * as refreshTokenRepository from '../repositories/refreshToken.repository';
 import { toSafeUser, ServiceError } from './user.service';
 import { comparePassword } from '../utils/password';
+import { logger } from '../utils/logger';
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -41,15 +42,19 @@ export const login = async (username: string, password: string) => {
   // "no such user") would let an attacker discover which usernames are
   // registered just by trying logins.
   if (!user) {
+    logger.warn('Login failed: unknown username', { username });
     throw new ServiceError('Invalid username or password', 401);
   }
 
   const passwordMatches = await comparePassword(password, user.password);
   if (!passwordMatches) {
+    logger.warn('Login failed: wrong password', { username });
     throw new ServiceError('Invalid username or password', 401);
   }
 
   const tokens = await issueTokenPair(user);
+
+  logger.info('User logged in', { userId: user._id.toString(), username });
 
   return { ...tokens, user: toSafeUser(user) };
 };
@@ -61,12 +66,14 @@ export const refreshToken = async (oldToken: string) => {
   } catch {
     // Covers an expired token, a bad signature, or a malformed token —
     // in all cases the caller must log in again.
+    logger.warn('Refresh token rejected: invalid or expired token');
     throw new ServiceError('Invalid or expired refresh token', 401);
   }
 
   const storedToken = await refreshTokenRepository.findByJti(payload.jti);
 
   if (!storedToken) {
+    logger.warn('Refresh token rejected: unknown jti', { userId: payload.sub });
     throw new ServiceError('Invalid or expired refresh token', 401);
   }
 
@@ -76,6 +83,9 @@ export const refreshToken = async (oldToken: string) => {
     // stolen and the real owner already rotated past it — or an attacker
     // is replaying a captured token. Either way we revoke every other
     // active token for this user, forcing a fresh login everywhere.
+    logger.warn('Refresh token reuse detected — revoking all tokens for user', {
+      userId: payload.sub,
+    });
     await refreshTokenRepository.revokeAllForUser(payload.sub);
     throw new ServiceError('Invalid or expired refresh token', 401);
   }
@@ -88,6 +98,8 @@ export const refreshToken = async (oldToken: string) => {
   // Rotation: retire the token that was just used before issuing a new one,
   // so it can never be redeemed a second time.
   await refreshTokenRepository.revokeByJti(payload.jti);
+
+  logger.info('Refresh token rotated', { userId: payload.sub });
 
   return issueTokenPair(user);
 };

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as userService from '../services/user.service';
+import { logger } from '../utils/logger';
 
 // Controllers only handle the HTTP side of things: reading the request,
 // calling the service layer to do the real work, and sending back a
@@ -22,7 +23,7 @@ const handleError = (res: Response, error: unknown): void => {
     return;
   }
 
-  console.error(error);
+  logger.error('Unhandled error in user controller', { error });
   res.status(500).json({ message: 'Something went wrong' });
 };
 
