@@ -1,6 +1,7 @@
 import * as userRepository from '../repositories/user.repository';
 import { IUser } from '../models/user.model';
 import { hashPassword } from '../utils/password';
+import { logger } from '../utils/logger';
 
 // The Service Layer holds business rules (password hashing, deciding what
 // counts as "not found", etc). Field-level validation (required fields,
@@ -46,6 +47,8 @@ export const createUser = async (payload: CreateUserPayload) => {
     password: hashedPassword,
   });
 
+  logger.info('User created', { userId: user._id.toString(), username, role: user.role });
+
   return toSafeUser(user);
 };
 
@@ -89,12 +92,30 @@ export const updateUser = async (id: string, payload: UpdateUserPayload) => {
   return toSafeUser(updatedUser);
 };
 
+// Called after a successful upload (see upload.controller.ts) to link the
+// saved file's URL to the uploading user's own profile.
+export const updateProfilePicture = async (userId: string, profilePictureUrl: string) => {
+  const updatedUser = await userRepository.updateUserById(userId, {
+    profilePicture: profilePictureUrl,
+  });
+
+  if (!updatedUser) {
+    throw new ServiceError('User not found', 404);
+  }
+
+  return toSafeUser(updatedUser);
+};
+
 export const softDeleteUser = async (id: string) => {
   const deletedUser = await userRepository.softDeleteUserById(id);
 
   if (!deletedUser) {
     throw new ServiceError('User not found', 404);
   }
+
+  // warn (not info) since deleting a user is a more consequential admin
+  // action worth standing out when scanning logs.
+  logger.warn('User soft-deleted', { userId: id, username: deletedUser.username });
 
   return toSafeUser(deletedUser);
 };

@@ -17,6 +17,7 @@ export interface UpdateUserInput {
   email?: string;
   role?: 'user' | 'admin';
   password?: string; // already hashed by the time it reaches here
+  profilePicture?: string;
 }
 
 export const createUser = (data: CreateUserInput): Promise<IUser> => {

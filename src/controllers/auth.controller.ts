@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import * as authService from '../services/auth.service';
 import { ServiceError } from '../services/user.service';
+import { logger } from '../utils/logger';
 
 const handleError = (res: Response, error: unknown): void => {
   if (error instanceof ServiceError) {
@@ -8,7 +9,7 @@ const handleError = (res: Response, error: unknown): void => {
     return;
   }
 
-  console.error(error);
+  logger.error('Unhandled error in auth controller', { error });
   res.status(500).json({ message: 'Something went wrong' });
 };
 
