@@ -8,3 +8,6 @@ uploads/*
 
 # Log files are generated at runtime (see src/utils/logger.ts), not committed.
 logs/
+
+# Jest's coverage report (npm test), regenerated on every run.
+coverage/

@@ -10,7 +10,8 @@ WORKDIR /app
 # step — it only re-runs if package.json/package-lock.json actually change,
 # not every time we edit application code.
 COPY package.json package-lock.json ./
-RUN npm ci
+# RUN npm ci
+RUN npm install
 
 COPY tsconfig.json ./
 COPY src ./src
