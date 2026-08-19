@@ -41,3 +41,9 @@ docker compose up --build
 The API is then available at `http://localhost:3000`, connected to the `mongo` container (not whatever `MONGODB_URI` is set to in `.env` — Compose overrides that to point at the container). Data, uploaded files, and logs persist across restarts via Docker volumes.
 
 Stop with `docker compose down` (add `-v` to also wipe the database/volumes).
+
+## API Documentation (Swagger)
+
+Once the server is running, open `http://localhost:3000/api-docs` in a browser for interactive, try-it-out API documentation covering every endpoint (auth, users, uploads, tasks) — including request/response schemas and which routes need a bearer token.
+
+Click **Authorize** at the top of the page, paste in an access token (from `POST /login`), and you can call protected endpoints directly from the browser. The raw OpenAPI spec (e.g. for importing into Postman) is available at `/api-docs.json`.
