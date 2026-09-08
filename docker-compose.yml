@@ -1,0 +1,52 @@
+services:
+  # A separate MongoDB container, isolated from the app container. Docker
+  # Compose gives every service DNS resolution by its service name on the
+  # shared network it creates automatically, so the "api" service below can
+  # reach this one simply as "mongo" — that's how the two containers are
+  # linked, no manual networking config needed.
+  mongo:
+    image: mongo:7
+    volumes:
+      # Named volume so the database survives `docker compose down` /
+      # container recreation — without it, all data would be wiped every
+      # time the container is rebuilt.
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    depends_on:
+      # Waits for Mongo's healthcheck to pass (not just for the container to
+      # start) before starting the app — our app fails fast if it can't
+      # connect to MongoDB, so this avoids a race where the app starts
+      # before Mongo is actually ready to accept connections.
+      mongo:
+        condition: service_healthy
+    ports:
+      - '3000:3000'
+    # Reuses the JWT secrets/expiry already defined in the local .env file,
+    # so nothing needs to be duplicated. MONGODB_URI and PORT are
+    # overridden explicitly below — env_file values are overridden by an
+    # explicit `environment:` entry of the same name in Compose, so this
+    # guarantees the app always talks to the "mongo" container here,
+    # regardless of whatever MONGODB_URI happens to be set to in .env
+    # (e.g. a developer's own Atlas connection string for local, non-Docker use).
+    env_file:
+      - .env
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/user-management-api
+      PORT: 3000
+    volumes:
+      # Persist uploaded profile pictures and log files across container
+      # recreation, same reasoning as the Mongo data volume above.
+      - uploads_data:/app/uploads
+      - logs_data:/app/logs
+
+volumes:
+  mongo_data:
+  uploads_data:
+  logs_data:

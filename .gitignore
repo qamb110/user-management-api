@@ -1,3 +1,13 @@
 node_modules
 dist
 .env
+
+# Uploaded files shouldn't be committed, but we keep the folder itself
+uploads/*
+!uploads/.gitkeep
+
+# Log files are generated at runtime (see src/utils/logger.ts), not committed.
+logs/
+
+# Jest's coverage report (npm test), regenerated on every run.
+coverage/
