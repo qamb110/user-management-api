@@ -28,6 +28,15 @@ The server starts on `http://localhost:3000` (configurable via `.env`, see `.env
 - `npm start` — run the compiled server
 - `npm run lint` — run ESLint
 - `npm run format` — run Prettier
+- `npm test` — run the test suite with coverage
+
+## Tests
+
+```bash
+npm test
+```
+
+Runs unit tests (`tests/unit/`) and integration tests (`tests/integration/`, using `supertest` against the app plus an in-memory MongoDB via `mongodb-memory-server` — no real database needed) with a coverage report. The run fails if coverage drops below 60% (configured in `jest.config.js`).
 
 ## Run with Docker
 
